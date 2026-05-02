@@ -2,133 +2,199 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate AI Football - Stable UI Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pro Football Sim: Elite Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Inter:wght@400;700;900&display=swap');
         
-        body { background: #020617; color: #f8fafc; font-family: 'Inter', sans-serif; overflow: hidden; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+        body { 
+            background: #020617; 
+            color: #f8fafc; 
+            font-family: 'Inter', sans-serif; 
+            overflow: hidden; 
+            margin: 0; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh;
+            touch-action: none;
+        }
         
         .setup-screen { z-index: 100; background: linear-gradient(to bottom, #0f172a, #020617); overflow-y: auto; position: fixed; inset: 0; }
-        .player-card { background: #1e293b; padding: 10px; border-radius: 10px; border: 2px solid #334155; }
+        .player-card { background: #1e293b; padding: 10px; border-radius: 10px; border: 2px solid #334155; position: relative; }
         .pos-label { font-family: 'Black Ops One', cursive; color: #fbbf24; font-size: 0.75rem; letter-spacing: 1px; }
         
-        #game-container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; padding: 10px; box-sizing: border-box; }
-        
-        canvas { background: #064e3b; border: 4px solid #065f46; border-radius: 8px; box-shadow: 0 0 30px rgba(0,0,0,0.5); max-width: 100%; max-height: 100%; object-fit: contain; }
+        #game-container { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: flex-start; 
+            width: 100%; 
+            height: 100%; 
+            padding: 10px; 
+            box-sizing: border-box; 
+            position: relative; 
+        }
 
-        /* ИСПРАВЛЕННОЕ ТАБЛО */
+        canvas { 
+            background: #064e3b; 
+            border: 4px solid #065f46; 
+            border-radius: 12px; 
+            box-shadow: 0 0 50px rgba(0,0,0,0.6); 
+            max-width: 100%; 
+            max-height: 75vh; 
+            cursor: crosshair;
+        }
+
         .score-board { 
             background: rgba(15, 23, 42, 0.95); 
-            padding: 8px 20px; 
+            padding: 8px 15px; 
             border-radius: 16px; 
             border: 2px solid #334155;
             display: flex; 
-            gap: 15px; 
+            gap: 12px; 
             align-items: center;
             margin-bottom: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.4);
             min-width: 320px;
             justify-content: center;
+            flex-wrap: wrap;
         }
 
         .score-display {
-            font-family: 'Inter', sans-serif;
-            font-variant-numeric: tabular-nums; /* Цифры одинаковой ширины */
+            font-variant-numeric: tabular-nums;
             background: #ffffff;
             color: #000000;
-            padding: 4px 12px;
+            padding: 2px 12px;
             border-radius: 8px;
             font-weight: 900;
-            font-size: 2rem;
+            font-size: 1.8rem;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            min-width: 110px; /* Жесткая ширина чтобы не скакало */
-            text-align: center;
+            min-width: 100px;
             font-style: italic;
         }
 
-        .team-label {
-            max-width: 120px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            font-weight: 900;
-            text-transform: uppercase;
+        .team-label { font-weight: 900; text-transform: uppercase; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .hidden { display: none; }
+
+        #event-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            text-align: center;
+            z-index: 50;
+            width: 90%;
         }
 
-        .hidden { display: none; }
+        .goal-announcement {
+            font-size: clamp(2rem, 10vw, 5rem);
+            font-weight: 900;
+            color: #fbbf24;
+            text-shadow: 0 0 30px rgba(251, 191, 36, 0.7);
+            animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.1); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
 <body class="items-center">
 
-    <!-- МЕНЮ НАСТРОЕК -->
+    <!-- SETUP MENU -->
     <div id="setup" class="setup-screen p-4">
         <div class="max-w-5xl mx-auto">
-            <h1 class="text-4xl md:text-6xl font-black mb-8 text-center italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
-                PRO FOOTBALL SIM ⚽️
+            <h1 class="text-4xl md:text-6xl font-black mb-6 text-center italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+                PRO FOOTBALL SIM: ELITE ⚽️
             </h1>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Команда 1 -->
-                <div class="bg-slate-800/40 p-6 rounded-3xl border-l-8 border-blue-500" id="t1">
-                    <div class="flex items-center gap-4 mb-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Team 1 -->
+                <div class="bg-slate-800/40 p-5 rounded-3xl border-l-8 border-blue-500" id="t1">
+                    <div class="flex items-center gap-4 mb-4">
                         <input type="color" value="#2563eb" class="t-color w-10 h-10 rounded-full cursor-pointer bg-transparent border-none">
-                        <input type="text" value="GRIFFINS" class="t-name bg-transparent text-2xl font-black uppercase border-b-2 border-slate-700 outline-none w-full text-white">
+                        <input type="text" value="GRIFFINS" class="t-name bg-transparent text-xl font-black uppercase border-b-2 border-slate-700 outline-none w-full text-white">
                     </div>
-                    <div class="flex gap-2 mb-6 items-center text-sm">
+                    <div class="flex flex-wrap gap-2 mb-4 items-center text-xs">
                         <span class="text-slate-400 uppercase font-black">Схема:</span>
-                        <input type="number" value="4" min="1" max="5" class="t-def w-12 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
-                        <input type="number" value="4" min="1" max="5" class="t-mid w-12 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
-                        <input type="number" value="2" min="1" max="5" class="t-fwd w-12 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
-                        <button onclick="refreshUI('t1')" class="bg-blue-600 hover:bg-blue-500 px-4 py-1 rounded-lg transition-all text-xs font-black">SET</button>
+                        <input type="number" value="4" min="1" max="5" class="t-def w-10 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
+                        <input type="number" value="3" min="1" max="5" class="t-mid w-10 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
+                        <input type="number" value="3" min="1" max="5" class="t-fwd w-10 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
+                        <button onclick="refreshUI('t1')" class="bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded-lg transition-all font-black ml-auto">UPDATE</button>
                     </div>
-                    <div class="t-list grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-1"></div>
+                    <div class="t-list grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[250px] overflow-y-auto p-1"></div>
                 </div>
 
-                <!-- Команда 2 -->
-                <div class="bg-slate-800/40 p-6 rounded-3xl border-r-8 border-red-500" id="t2">
-                    <div class="flex items-center gap-4 mb-6">
+                <!-- Team 2 -->
+                <div class="bg-slate-800/40 p-5 rounded-3xl border-r-8 border-red-500" id="t2">
+                    <div class="flex items-center gap-4 mb-4">
                         <input type="color" value="#dc2626" class="t-color w-10 h-10 rounded-full cursor-pointer bg-transparent border-none">
-                        <input type="text" value="DRAGONS" class="t-name bg-transparent text-2xl font-black uppercase border-b-2 border-slate-700 outline-none w-full text-right text-white">
+                        <input type="text" value="DRAGONS" class="t-name bg-transparent text-xl font-black uppercase border-b-2 border-slate-700 outline-none w-full text-right text-white">
                     </div>
-                    <div class="flex gap-2 mb-6 items-center justify-end text-sm">
+                    <div class="flex flex-wrap gap-2 mb-4 items-center justify-end text-xs">
                         <span class="text-slate-400 uppercase font-black">Схема:</span>
-                        <input type="number" value="4" min="1" max="5" class="t-def w-12 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
-                        <input type="number" value="3" min="1" max="5" class="t-mid w-12 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
-                        <input type="number" value="3" min="1" max="5" class="t-fwd w-12 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
-                        <button onclick="refreshUI('t2')" class="bg-red-600 hover:bg-red-500 px-4 py-1 rounded-lg transition-all text-xs font-black">SET</button>
+                        <input type="number" value="4" min="1" max="5" class="t-def w-10 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
+                        <input type="number" value="4" min="1" max="5" class="t-mid w-10 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
+                        <input type="number" value="2" min="1" max="5" class="t-fwd w-10 bg-slate-900 p-1 rounded text-center border border-slate-700 text-white">
+                        <button onclick="refreshUI('t2')" class="bg-red-600 hover:bg-red-500 px-3 py-1 rounded-lg transition-all font-black ml-auto">UPDATE</button>
                     </div>
-                    <div class="t-list grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[300px] overflow-y-auto p-1"></div>
+                    <div class="t-list grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[250px] overflow-y-auto p-1"></div>
                 </div>
             </div>
 
-            <div class="mt-8 flex justify-center">
-                <button id="start" class="bg-yellow-400 hover:bg-yellow-300 text-black px-16 py-4 rounded-xl font-black text-2xl uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95">
-                    ИГРАТЬ ⚽️
+            <div class="mt-6 flex flex-col items-center gap-4">
+                <div class="flex items-center gap-4 bg-slate-900/80 p-3 rounded-2xl border border-slate-700">
+                    <span class="text-slate-400 font-bold uppercase text-xs">Матч:</span>
+                    <select id="match-duration" class="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-sm">
+                        <option value="60">1 МИН</option>
+                        <option value="120" selected>2 МИН</option>
+                        <option value="300">5 МИН</option>
+                    </select>
+                </div>
+                <button id="start" class="bg-yellow-400 hover:bg-yellow-300 text-black px-12 py-3 rounded-xl font-black text-xl uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95">
+                    KICK OFF! ⚽️
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- ИГРОВАЯ ЗОНА -->
+    <!-- GAME AREA -->
     <div id="game-container" class="hidden">
+        <div id="event-overlay"></div>
+        
         <div class="score-board">
             <div id="uiL" class="team-label text-blue-500 text-right">GRIFFINS</div>
             <div class="score-display">
                 <span id="score1">0</span>
-                <span>-</span>
+                <span>:</span>
                 <span id="score2">0</span>
             </div>
             <div id="uiR" class="team-label text-red-500">DRAGONS</div>
-            <div class="border-l-2 border-slate-700 pl-4">
-                <div id="uiTime" class="text-xl font-black text-yellow-400 tabular-nums">02:00</div>
+            <div class="border-l border-slate-700 pl-4 ml-2">
+                <div id="uiTime" class="text-lg font-black text-yellow-400 tabular-nums">02:00</div>
             </div>
         </div>
         <canvas id="pitch"></canvas>
+
+        <div id="final-screen" class="hidden fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md">
+            <div class="bg-slate-900 p-8 rounded-3xl border-4 border-yellow-400 text-center max-w-lg mx-4">
+                <h2 class="text-4xl font-black mb-2 italic">FULL TIME! 🏁</h2>
+                <div id="final-result" class="text-2xl font-bold text-slate-300 mb-8">GRIFFINS 2 - 1 DRAGONS</div>
+                <button onclick="location.reload()" class="bg-yellow-400 text-black px-10 py-3 rounded-xl font-black uppercase hover:bg-yellow-300">В ГЛАВНОЕ МЕНЮ</button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -139,26 +205,32 @@
         const FIELD_W = 1200;
         const FIELD_H = 800;
 
-        const POS_LABELS = { GK: 'GK', DEF: ['LB', 'CB', 'CB', 'CB', 'RB'], MID: ['LM', 'CM', 'CM', 'CM', 'RM'], FWD: ['LW', 'ST', 'ST', 'ST', 'RW'] };
-        const NAMES = ["Mbappe", "Messi", "Ronaldo", "Kane", "Salah", "De Bruyne", "Modric", "Van Dijk", "Alisson", "Walker", "Saka", "Foden", "Haaland", "Rodri", "Bellingham", "Lewy"];
+        const POS_MAP = {
+            DEF: ['CB', 'LB', 'RB', 'LWB', 'RWB'],
+            MID: ['CM', 'LM', 'RM', 'CDM', 'CAM'],
+            FWD: ['ST', 'LW', 'RW', 'CF', 'LF']
+        };
+
+        const NAMES = ["Mbappe", "Messi", "Ronaldo", "Kane", "Salah", "De Bruyne", "Modric", "Van Dijk", "Saka", "Foden", "Haaland", "Rodri", "Bellingham", "Lewy", "Vinicius", "Yamal", "Musiala", "Palmer", "Wirtz"];
 
         function refreshUI(tid) {
             const list = document.querySelector(`#${tid} .t-list`);
             const d = parseInt(document.querySelector(`#${tid} .t-def`).value) || 4;
-            const m = parseInt(document.querySelector(`#${tid} .t-mid`).value) || 4;
-            const f = parseInt(document.querySelector(`#${tid} .t-fwd`).value) || 2;
+            const m = parseInt(document.querySelector(`#${tid} .t-mid`).value) || 3;
+            const f = parseInt(document.querySelector(`#${tid} .t-fwd`).value) || 3;
             list.innerHTML = '';
+            
             const roles = [['GK', 1], ['DEF', d], ['MID', m], ['FWD', f]];
             roles.forEach(([role, count]) => {
                 for (let i = 0; i < count; i++) {
-                    const label = role === 'GK' ? 'GK' : POS_LABELS[role][Math.min(i, 4)];
+                    const label = role === 'GK' ? 'GK' : POS_MAP[role][i % 5];
                     const card = document.createElement('div');
                     card.className = 'player-card flex flex-col gap-1';
                     card.innerHTML = `
                         <div class="pos-label">${label}</div>
                         <div class="flex gap-1">
-                            <input type="number" value="${role === 'GK' ? 1 : Math.floor(Math.random()*90)+2}" class="p-num w-10 bg-slate-950 p-1 rounded font-black text-center text-xs border border-slate-700 text-white">
-                            <input type="text" value="${NAMES[Math.floor(Math.random()*NAMES.length)]}" class="p-name bg-transparent border-b border-slate-600 focus:border-yellow-500 outline-none flex-1 font-bold text-xs text-white">
+                            <input type="number" value="${role === 'GK' ? 1 : Math.floor(Math.random()*98)+2}" class="p-num w-10 bg-slate-950 p-1 rounded font-black text-center text-[10px] border border-slate-700 text-white">
+                            <input type="text" value="${NAMES[Math.floor(Math.random()*NAMES.length)]}" class="p-name bg-transparent border-b border-slate-600 focus:border-yellow-500 outline-none flex-1 font-bold text-[11px] text-white">
                             <input type="hidden" class="p-role" value="${role}">
                             <input type="hidden" class="p-label" value="${label}">
                         </div>`;
@@ -166,16 +238,33 @@
                 }
             });
         }
+
         refreshUI('t1'); refreshUI('t2');
 
-        const state = { active: false, time: 120, score: [0, 0], players: [], ball: { x: 600, y: 400, vx: 0, vy: 0, owner: null } };
+        const state = { 
+            active: false, 
+            time: 120, 
+            score: [0, 0], 
+            players: [], 
+            ball: { x: 600, y: 400, vx: 0, vy: 0, owner: null, spin: 0 },
+            phase: 'normal',
+            lastShooter: null
+        };
 
-        function sfx(f, t, d) {
-            if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
-            const o = audio.createOscillator(); const g = audio.createGain();
-            o.type = t; o.frequency.value = f; g.gain.setValueAtTime(0.05, audio.currentTime);
-            g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + d);
-            o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + d);
+        function sfx(f, t, d, v=0.05) {
+            try {
+                if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)();
+                const o = audio.createOscillator(); const g = audio.createGain();
+                o.type = t; o.frequency.value = f; g.gain.setValueAtTime(v, audio.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + d);
+                o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + d);
+            } catch(e){}
+        }
+
+        function showEvent(text, subtext = "") {
+            const overlay = document.getElementById('event-overlay');
+            overlay.innerHTML = `<div class="goal-announcement">${text}</div><div class="text-lg md:text-2xl font-bold text-white mt-2">${subtext}</div>`;
+            setTimeout(() => overlay.innerHTML = '', 3000);
         }
 
         class Player {
@@ -184,111 +273,224 @@
                 this.name = name; this.num = num; this.color = color; this.side = side;
                 this.x = 0; this.y = 0; this.hx = 0; this.hy = 0;
                 this.vx = 0; this.vy = 0;
-                this.speed = 2.5 + Math.random() * 0.7;
-                this.radius = 18; this.cooldown = 0;
+                this.speed = (role === 'GK' ? 2.9 : 2.6) + Math.random() * 0.9;
+                this.radius = 16; this.cooldown = 0;
+                this.cards = 0; 
+                this.out = false;
+                this.animTimer = Math.random() * 10;
             }
 
             update() {
+                if (this.out || state.phase === 'goal') return;
                 if (this.cooldown > 0) this.cooldown--;
+
+                this.animTimer += 0.2;
+
                 let tx = this.hx, ty = this.hy;
-                const dBall = Math.hypot(state.ball.x - this.x, state.ball.y - this.y);
+                const distBall = Math.hypot(state.ball.x - this.x, state.ball.y - this.y);
                 const isOurBall = state.ball.owner && state.ball.owner.team === this.team;
 
                 if (state.ball.owner === this) {
                     const goalX = this.side === 1 ? FIELD_W : 0;
                     const distToGoal = Math.abs(goalX - this.x);
-                    
-                    if (distToGoal < 320) {
-                        this.shoot();
+
+                    // Умное решение: пробить или пасовать
+                    if (distToGoal < 400 && Math.random() < 0.03) {
+                        this.shoot(true); // Дальний крученый удар!
+                    } else if (distToGoal < 280) {
+                        this.shoot(false);
                     } else {
-                        if (Math.random() < 0.03) {
-                            this.smartPass();
-                        } else {
-                            tx = goalX; ty = 400 + (this.y - 400) * 0.4;
-                        }
+                        if (Math.random() < 0.02) this.smartPass();
+                        else { tx = goalX; ty = 400 + (this.y - 400) * 0.3; }
                     }
                 } else {
                     if (this.role === 'GK') {
-                        const baseGoalX = this.side === 1 ? 50 : 1150;
-                        ty = Math.max(330, Math.min(470, state.ball.y));
-                        if (dBall < 200) {
-                            tx = state.ball.x;
-                            tx = this.side === 1 ? Math.min(160, tx) : Math.max(1040, tx);
-                        } else {
-                            tx = baseGoalX;
-                        }
-                    } else if (!isOurBall && dBall < 480) {
-                        const closest = state.players
-                            .filter(p => p.team === this.team && p.role !== 'GK')
-                            .sort((a,b) => Math.hypot(a.x-state.ball.x, a.y-state.ball.y) - Math.hypot(b.x-state.ball.x, b.y-state.ball.y))[0];
+                        const baseGoalX = this.side === 1 ? 40 : 1160;
+                        ty = Math.max(300, Math.min(500, state.ball.y));
+                        tx = distBall < 200 ? state.ball.x : baseGoalX;
+                        if (this.side === 1) tx = Math.min(180, tx); else tx = Math.max(1020, tx);
+                    } else if (!isOurBall && distBall < 450) {
+                        const teammates = state.players.filter(p => p.team === this.team && !p.out && p.role !== 'GK');
+                        const closest = teammates.sort((a,b) => Math.hypot(a.x-state.ball.x, a.y-state.ball.y) - Math.hypot(b.x-state.ball.x, b.y-state.ball.y))[0];
                         if (closest === this) { tx = state.ball.x; ty = state.ball.y; }
                     }
                 }
 
                 const angle = Math.atan2(ty - this.y, tx - this.x);
-                this.vx = Math.cos(angle) * this.speed;
-                this.vy = Math.sin(angle) * this.speed;
+                const targetVx = Math.cos(angle) * this.speed;
+                const targetVy = Math.sin(angle) * this.speed;
+                
+                this.vx += (targetVx - this.vx) * 0.1;
+                this.vy += (targetVy - this.vy) * 0.1;
 
+                // Разделение игроков
                 state.players.forEach(p => {
-                    if (p === this) return;
+                    if (p === this || p.out) return;
                     const d = Math.hypot(p.x - this.x, p.y - this.y);
-                    let minDist = 45;
-                    if (p.role === 'GK' && state.ball.owner === p) minDist = 80;
-                    if (d < minDist) {
-                        const force = (minDist - d) / minDist * 5;
-                        this.vx += (this.x - p.x) / d * force;
-                        this.vy += (this.y - p.y) / d * force;
+                    if (d < 35) {
+                        const f = (35 - d) / 35 * 3;
+                        this.vx += (this.x - p.x) / d * f;
+                        this.vy += (this.y - p.y) / d * f;
                     }
                 });
 
                 this.x += this.vx; this.y += this.vy;
-                if (dBall < 22 && !state.ball.owner && this.cooldown === 0) {
-                    state.ball.owner = this;
-                    if (this.role === 'GK') this.cooldown = 50; 
-                    sfx(200, 'sine', 0.05);
+                this.x = Math.max(25, Math.min(FIELD_W - 25, this.x));
+                this.y = Math.max(25, Math.min(FIELD_H - 25, this.y));
+
+                if (distBall < 22 && !state.ball.owner && this.cooldown === 0) {
+                    this.tryTakeBall();
                 }
+            }
+
+            tryTakeBall() {
+                const opponentOwner = state.ball.owner;
+                if (opponentOwner && opponentOwner.team !== this.team) {
+                    if (Math.random() < 0.04) {
+                        this.commitFoul(opponentOwner);
+                    } else if (Math.random() < 0.1) {
+                        state.ball.owner = this;
+                        sfx(220, 'sine', 0.05);
+                    }
+                } else if (!state.ball.owner) {
+                    state.ball.owner = this;
+                    sfx(220, 'sine', 0.05);
+                }
+            }
+
+            commitFoul(victim) {
+                this.cooldown = 70;
+                victim.cooldown = 50;
+                sfx(100, 'sawtooth', 0.2, 0.1);
+                
+                const isInBox = (victim.side === 1 && victim.x > 1030) || (victim.side === -1 && victim.x < 170);
+                
+                if (Math.random() < 0.3) {
+                    this.cards++;
+                    showEvent(this.cards >= 2 ? "RED CARD! 🟥" : "YELLOW CARD! 🟨", `${this.name} (${this.team === 0 ? 'T1' : 'T2'})`);
+                    if (this.cards >= 2) this.out = true;
+                } else {
+                    showEvent("FOUL! 🛑", `${this.name} made a bad tackle`);
+                }
+
+                if (isInBox) this.setupPenalty(victim.team);
+                else {
+                    state.ball.owner = victim;
+                    state.ball.vx = 0; state.ball.vy = 0;
+                }
+            }
+
+            setupPenalty(attackingTeamIdx) {
+                state.ball.owner = null;
+                state.ball.vx = 0; state.ball.vy = 0;
+                state.ball.x = attackingTeamIdx === 0 ? 1090 : 110;
+                state.ball.y = 400;
+                setTimeout(() => {
+                    if (Math.random() > 0.35) {
+                        state.score[attackingTeamIdx]++;
+                        showEvent("PENALTY GOAL! ⚽️", "ICE COLD!");
+                        resetBall();
+                    } else {
+                        showEvent("PENALTY MISSED! ❌", "WHAT A SAVE!");
+                        state.ball.vx = attackingTeamIdx === 0 ? -12 : 12;
+                        state.ball.vy = (Math.random()-0.5)*10;
+                    }
+                }, 1200);
             }
 
             smartPass() {
                 if (state.ball.owner !== this) return;
-                const mates = state.players.filter(p => p.team === this.team && p !== this);
-                let options = mates.filter(m => (this.side === 1 ? m.x > this.x - 30 : m.x < this.x + 30));
-                if (options.length === 0) options = mates.filter(m => m.role !== 'GK');
-                if (options.length === 0) options = mates;
-                const target = options[Math.floor(Math.random() * options.length)];
+                const mates = state.players.filter(p => p.team === this.team && p !== this && !p.out);
+                let target = mates.sort((a,b) => (this.side === 1 ? b.x - a.x : a.x - b.x))[0];
+                if (!target) return;
+
                 state.ball.owner = null; this.cooldown = 45;
                 const a = Math.atan2(target.y - this.y, target.x - this.x);
-                state.ball.vx = Math.cos(a) * 12; state.ball.vy = Math.sin(a) * 12;
-                sfx(300, 'sine', 0.08);
+                state.ball.vx = Math.cos(a) * 15; state.ball.vy = Math.sin(a) * 15;
+                state.ball.spin = 0;
+                sfx(320, 'sine', 0.08);
             }
 
-            shoot() {
+            shoot(isLong = false) {
                 if (state.ball.owner !== this) return;
                 state.ball.owner = null; this.cooldown = 70;
                 const tx = this.side === 1 ? FIELD_W : 0;
                 const ty = 360 + Math.random() * 80;
                 const a = Math.atan2(ty - this.y, tx - this.x);
-                const p = 19 + Math.random() * 4;
-                state.ball.vx = Math.cos(a) * p; state.ball.vy = Math.sin(a) * p;
-                sfx(150, 'sine', 0.2);
+                
+                const power = isLong ? 20 + Math.random()*4 : 22 + Math.random()*6;
+                state.ball.vx = Math.cos(a) * power; 
+                state.ball.vy = Math.sin(a) * power;
+                
+                // Эффект закрутки (spin)
+                if (isLong || Math.random() < 0.4) {
+                    state.ball.spin = (Math.random() - 0.5) * 0.8;
+                } else {
+                    state.ball.spin = 0;
+                }
+
+                sfx(180, 'sine', 0.25);
+                state.lastShooter = this;
             }
 
             draw() {
+                if (this.out) return;
                 ctx.save();
-                ctx.beginPath(); ctx.ellipse(this.x, this.y + 15, 12, 6, 0, 0, Math.PI*2);
-                ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
+                
+                // Тени ног
+                const legOffset = Math.sin(this.animTimer) * 8;
+                const isMoving = Math.hypot(this.vx, this.vy) > 0.5;
+
+                ctx.fillStyle = 'rgba(0,0,0,0.25)';
+                if (isMoving) {
+                    ctx.beginPath(); ctx.arc(this.x - 6, this.y + 14 + (legOffset > 0 ? 0 : -2), 5, 0, Math.PI*2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(this.x + 6, this.y + 14 + (legOffset < 0 ? 0 : -2), 5, 0, Math.PI*2); ctx.fill();
+                }
+
+                // Тень тела
+                ctx.beginPath(); ctx.ellipse(this.x, this.y + 12, 12, 6, 0, 0, Math.PI*2);
+                ctx.fill();
+
+                // Отрисовка Ножек (обувь)
+                if (isMoving) {
+                    ctx.fillStyle = '#111';
+                    // Левая нога
+                    ctx.beginPath(); 
+                    ctx.roundRect(this.x - 10, this.y + 10 + legOffset, 6, 10, 3); 
+                    ctx.fill();
+                    // Правая нога
+                    ctx.beginPath(); 
+                    ctx.roundRect(this.x + 4, this.y + 10 - legOffset, 6, 10, 3); 
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#111';
+                    ctx.beginPath(); ctx.roundRect(this.x - 10, this.y + 10, 6, 10, 3); ctx.fill();
+                    ctx.beginPath(); ctx.roundRect(this.x + 4, this.y + 10, 6, 10, 3); ctx.fill();
+                }
+
+                // Body
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
                 ctx.fillStyle = this.color; ctx.fill();
-                ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke();
-                ctx.fillStyle = '#fff'; ctx.font = '900 13px Inter'; ctx.textAlign = 'center';
-                ctx.fillText(this.num, this.x, this.y + 5);
-                ctx.font = '900 11px Inter'; ctx.strokeStyle = '#000'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
-                ctx.strokeText(this.name.toUpperCase(), this.x, this.y - 30);
-                ctx.fillText(this.name.toUpperCase(), this.x, this.y - 30);
-                ctx.fillStyle = '#fbbf24'; ctx.font = '900 10px Black Ops One';
-                ctx.fillText(this.label, this.x, this.y + 38);
-                if (this.role === 'GK') {
-                    ctx.font = '16px serif'; ctx.fillText('🧤', this.x - 20, this.y); ctx.fillText('🧤', this.x + 20, this.y);
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 2.5; ctx.stroke();
+                
+                // Number
+                ctx.fillStyle = '#fff'; ctx.font = '900 12px Inter'; ctx.textAlign = 'center';
+                ctx.fillText(this.num, this.x, this.y + 4);
+                
+                // Name & Label
+                ctx.font = '900 11px Inter'; ctx.fillStyle = '#fff';
+                ctx.shadowBlur = 4; ctx.shadowColor = 'black';
+                ctx.fillText(this.name.toUpperCase(), this.x, this.y - 24);
+                ctx.shadowBlur = 0;
+                
+                ctx.fillStyle = '#fbbf24'; ctx.font = '900 9px Black Ops One';
+                ctx.fillText(this.label, this.x, this.y + 32);
+                
+                // Cards
+                if (this.cards === 1) { 
+                    ctx.fillStyle = '#fbbf24'; 
+                    ctx.fillRect(this.x + 12, this.y - 32, 7, 10); 
+                    ctx.strokeStyle = '#000'; ctx.lineWidth = 0.5; ctx.strokeRect(this.x + 12, this.y - 32, 7, 10);
                 }
                 ctx.restore();
             }
@@ -296,72 +498,189 @@
 
         function init() {
             state.players = [];
+            state.score = [0, 0];
+            state.time = parseInt(document.getElementById('match-duration').value);
+            state.phase = 'normal';
+            
             ['t1', 't2'].forEach((id, idx) => {
                 const color = document.querySelector(`#${id} .t-color`).value;
                 const name = document.querySelector(`#${id} .t-name`).value;
                 const side = idx === 0 ? 1 : -1;
                 document.getElementById(idx === 0 ? 'uiL' : 'uiR').innerText = name;
-                const rls = { GK:1, DEF:parseInt(document.querySelector(`#${id} .t-def`).value), MID:parseInt(document.querySelector(`#${id} .t-mid`).value), FWD:parseInt(document.querySelector(`#${id} .t-fwd`).value) };
-                const cur = { GK:0, DEF:0, MID:0, FWD:0 };
-                document.querySelectorAll(`#${id} .player-card`).forEach(c => {
+                
+                const cards = document.querySelectorAll(`#${id} .player-card`);
+                cards.forEach((c, i) => {
                     const role = c.querySelector('.p-role').value;
                     const p = new Player(idx, role, c.querySelector('.p-label').value, c.querySelector('.p-name').value, c.querySelector('.p-num').value, color, side);
-                    const i = cur[role]++; const spc = 700 / (rls[role] + 1);
-                    p.hy = 50 + spc * (i + 1);
+                    
+                    const rCount = Array.from(cards).filter(cc => cc.querySelector('.p-role').value === role).length;
+                    const rIdx = Array.from(cards).filter((cc, ii) => ii < i && cc.querySelector('.p-role').value === role).length;
+                    const laneWidth = 700 / (rCount + 1);
+                    p.hy = 50 + laneWidth * (rIdx + 1);
+                    
                     if (role === 'GK') p.hx = side === 1 ? 60 : 1140;
                     else if (role === 'DEF') p.hx = side === 1 ? 280 : 920;
-                    else if (role === 'MID') p.hx = side === 1 ? 580 : 620;
-                    else p.hx = side === 1 ? 950 : 250;
+                    else if (role === 'MID') p.hx = side === 1 ? 520 : 680;
+                    else p.hx = side === 1 ? 900 : 300;
+                    
                     p.x = p.hx; p.y = p.hy;
                     state.players.push(p);
                 });
             });
-            state.active = true; canvas.width = FIELD_W; canvas.height = FIELD_H;
-            sfx(600, 'square', 0.4);
+            state.active = true;
+            resizeCanvas();
+            resetBall();
         }
+
+        function resizeCanvas() {
+            const container = document.getElementById('game-container');
+            const cw = container.clientWidth - 20;
+            const ratio = FIELD_H / FIELD_W;
+            canvas.style.width = cw + 'px';
+            canvas.style.height = (cw * ratio) + 'px';
+            canvas.width = FIELD_W;
+            canvas.height = FIELD_H;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
 
         function loop() {
             if (state.active) {
-                state.players.forEach(p => p.update());
-                if (state.ball.owner) {
-                    state.ball.x = state.ball.owner.x + (state.ball.owner.side * 18);
-                    state.ball.y = state.ball.owner.y;
-                    state.ball.vx = 0; state.ball.vy = 0;
-                } else {
-                    state.ball.x += state.ball.vx; state.ball.y += state.ball.vy;
-                    state.ball.vx *= 0.985; state.ball.vy *= 0.985;
-                    if (state.ball.y < 25 || state.ball.y > 775) state.ball.vy *= -0.8;
-                    if (state.ball.y > 330 && state.ball.y < 470) {
-                        if (state.ball.x < 15) { state.score[1]++; resetBall(); }
-                        else if (state.ball.x > 1185) { state.score[0]++; resetBall(); }
-                    } else if (state.ball.x < 15 || state.ball.x > 1185) state.ball.vx *= -0.8;
+                if (state.phase === 'normal') {
+                    state.players.forEach(p => p.update());
+                    
+                    if (state.ball.owner) {
+                        state.ball.x = state.ball.owner.x + (state.ball.owner.side * 18);
+                        state.ball.y = state.ball.owner.y;
+                        state.ball.vx = 0; state.ball.vy = 0; state.ball.spin = 0;
+                    } else {
+                        // Физика закрутки
+                        state.ball.vy += state.ball.vx * state.ball.spin * 0.08;
+                        state.ball.x += state.ball.vx; 
+                        state.ball.y += state.ball.vy;
+                        
+                        state.ball.vx *= 0.988; 
+                        state.ball.vy *= 0.988;
+                        
+                        // Отскоки от стен
+                        if (state.ball.y < 25 || state.ball.y > 775) {
+                            state.ball.vy *= -0.7; 
+                            state.ball.spin *= 0.5;
+                            state.ball.y = state.ball.y < 25 ? 26 : 774;
+                        }
+                        
+                        // Ворота
+                        if (state.ball.y > 330 && state.ball.y < 470) {
+                            if (state.ball.x < 15) goalScored(1);
+                            else if (state.ball.x > 1185) goalScored(0);
+                        } else if (state.ball.x < 20 || state.ball.x > 1180) {
+                            state.ball.vx *= -0.7;
+                            state.ball.x = state.ball.x < 20 ? 21 : 1179;
+                        }
+                    }
+                    
+                    state.time -= 1/60;
+                    if (state.time <= 0) {
+                        if (state.score[0] === state.score[1]) {
+                             state.time = 30; // Доп время
+                             showEvent("EXTRA TIME!", "30 more seconds!");
+                        } else endGame();
+                    }
                 }
-                state.time -= 1/60;
-                
-                // ОБНОВЛЕНИЕ ТАБЛО БЕЗ СКАЧКОВ
-                document.getElementById('score1').innerText = state.score[0];
-                document.getElementById('score2').innerText = state.score[1];
-                
-                const m = Math.floor(state.time / 60), s = Math.floor(state.time % 60);
-                document.getElementById('uiTime').innerText = `${m}:${s.toString().padStart(2, '0')}`;
-                if (state.time <= 0) state.active = false;
+                updateUI();
             }
-            ctx.fillStyle = '#065f46'; ctx.fillRect(0,0,FIELD_W,FIELD_H);
-            ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 5;
-            ctx.strokeRect(10,10,FIELD_W-20,FIELD_H-20);
-            ctx.beginPath(); ctx.moveTo(600,10); ctx.lineTo(600,790); ctx.stroke();
-            ctx.beginPath(); ctx.arc(600, 400, 80, 0, Math.PI*2); ctx.stroke();
-            ctx.strokeRect(10, 200, 160, 400); ctx.strokeRect(1030, 200, 160, 400);
-            state.players.sort((a,b) => a.y - b.y).forEach(p => p.draw());
-            ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(state.ball.x, state.ball.y, 10, 0, Math.PI*2);
-            ctx.shadowBlur = 10; ctx.shadowColor = '#000'; ctx.fill(); ctx.shadowBlur = 0;
+            draw();
             requestAnimationFrame(loop);
         }
 
+        function goalScored(teamIdx) {
+            state.score[teamIdx]++;
+            state.phase = 'goal';
+            const scorer = state.lastShooter ? state.lastShooter.name : "Team " + (teamIdx + 1);
+            const isBanger = Math.abs(state.ball.vx) > 15;
+            showEvent(isBanger ? "WHAT A BANGER! 🔥" : "GOOOAL!!! ⚽️", scorer + " found the net!");
+            sfx(380, 'square', 0.6, 0.1);
+            setTimeout(() => {
+                state.phase = 'normal';
+                resetBall();
+            }, 3000);
+        }
+
         function resetBall() {
-            state.ball = { x: 600, y: 400, vx: 0, vy: 0, owner: null };
-            state.players.forEach(p => { p.x = p.hx; p.y = p.hy; p.cooldown = 60; });
-            sfx(500, 'triangle', 0.4);
+            state.ball = { x: 600, y: 400, vx: 0, vy: 0, owner: null, spin: 0 };
+            state.players.forEach(p => { 
+                p.x = p.hx + (Math.random()*60-30); 
+                p.y = p.hy + (Math.random()*60-30); 
+                p.vx = 0; p.vy = 0;
+                p.cooldown = 45; 
+            });
+            state.lastShooter = null;
+        }
+
+        function endGame() {
+            state.active = false;
+            const t1 = document.querySelector('#t1 .t-name').value;
+            const t2 = document.querySelector('#t2 .t-name').value;
+            const resultText = `${t1} ${state.score[0]} - ${state.score[1]} ${t2}`;
+            document.getElementById('final-result').innerText = resultText;
+            document.getElementById('final-screen').classList.remove('hidden');
+        }
+
+        function updateUI() {
+            document.getElementById('score1').innerText = state.score[0];
+            document.getElementById('score2').innerText = state.score[1];
+            const m = Math.max(0, Math.floor(state.time / 60)), s = Math.max(0, Math.floor(state.time % 60));
+            document.getElementById('uiTime').innerText = `${m}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function draw() {
+            // Pitch background
+            const grad = ctx.createRadialGradient(600,400,100,600,400,800);
+            grad.addColorStop(0, '#065f46');
+            grad.addColorStop(1, '#044e3b');
+            ctx.fillStyle = grad; 
+            ctx.fillRect(0,0,FIELD_W,FIELD_H);
+
+            // Lines
+            ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 4;
+            ctx.strokeRect(20,20,FIELD_W-40,FIELD_H-40);
+            ctx.beginPath(); ctx.moveTo(600,20); ctx.lineTo(600,780); ctx.stroke();
+            ctx.beginPath(); ctx.arc(600, 400, 100, 0, Math.PI*2); ctx.stroke();
+            
+            // Penalty areas
+            ctx.fillStyle = 'rgba(255,255,255,0.03)';
+            ctx.fillRect(20, 180, 160, 440); ctx.strokeRect(20, 180, 160, 440);
+            ctx.fillRect(1020, 180, 160, 440); ctx.strokeRect(1020, 180, 160, 440);
+            
+            // Goals
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 10;
+            ctx.beginPath(); ctx.moveTo(20, 330); ctx.lineTo(20, 470); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(1180, 330); ctx.lineTo(1180, 470); ctx.stroke();
+
+            // Players
+            state.players.sort((a,b) => a.y - b.y).forEach(p => p.draw());
+            
+            // Ball
+            ctx.save();
+            ctx.translate(state.ball.x, state.ball.y);
+            
+            // Ball shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath(); ctx.arc(2, 6, 9, 0, Math.PI*2); ctx.fill();
+            
+            // Ball body
+            ctx.rotate(state.ball.x * 0.05); // Вращение визуальное
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(0, 0, 10, 0, Math.PI*2);
+            ctx.fill();
+            
+            // Ball pattern
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 1.5;
+            for(let i=0; i<3; i++){
+                ctx.rotate(Math.PI/1.5);
+                ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(6, 0); ctx.stroke();
+            }
+            ctx.restore();
         }
 
         document.getElementById('start').addEventListener('click', () => {
